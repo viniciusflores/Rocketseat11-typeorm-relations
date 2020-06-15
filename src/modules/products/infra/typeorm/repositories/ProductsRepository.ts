@@ -1,19 +1,19 @@
-import { getRepository, Repository, In } from 'typeorm';
+import { getRepository, Repository, In } from 'typeorm'
 
-import IProductsRepository from '@modules/products/repositories/IProductsRepository';
-import ICreateProductDTO from '@modules/products/dtos/ICreateProductDTO';
-import IUpdateProductsQuantityDTO from '@modules/products/dtos/IUpdateProductsQuantityDTO';
-import Product from '../entities/Product';
+import IProductsRepository from '@modules/products/repositories/IProductsRepository'
+import ICreateProductDTO from '@modules/products/dtos/ICreateProductDTO'
+import IUpdateProductsQuantityDTO from '@modules/products/dtos/IUpdateProductsQuantityDTO'
+import Product from '../entities/Product'
 
 interface IFindProducts {
-  id: string;
+  id: string
 }
 
 class ProductsRepository implements IProductsRepository {
-  private ormRepository: Repository<Product>;
+  private ormRepository: Repository<Product>
 
   constructor() {
-    this.ormRepository = getRepository(Product);
+    this.ormRepository = getRepository(Product)
   }
 
   public async create({
@@ -21,22 +21,49 @@ class ProductsRepository implements IProductsRepository {
     price,
     quantity,
   }: ICreateProductDTO): Promise<Product> {
-    // TODO
+    const products = this.ormRepository.create({
+      name,
+      price,
+      quantity,
+    })
+
+    await this.ormRepository.save(products)
+
+    return products
   }
 
   public async findByName(name: string): Promise<Product | undefined> {
-    // TODO
+    const productName = this.ormRepository.findOne({
+      where: { name },
+    })
+
+    return productName
   }
 
   public async findAllById(products: IFindProducts[]): Promise<Product[]> {
-    // TODO
+    const findProduct = this.ormRepository.findByIds(products)
+
+    return findProduct
   }
 
   public async updateQuantity(
     products: IUpdateProductsQuantityDTO[],
   ): Promise<Product[]> {
-    // TODO
+    const id = products.map(product => product.id)
+
+    const storedProducts = await this.ormRepository.findByIds(id)
+
+    const updateProducts = storedProducts.map(storedProduct => {
+      const product = products.find(p => p.id === storedProduct.id)
+
+      return {
+        ...product,
+        quantity: product?.quantity,
+      }
+    })
+
+    return this.ormRepository.save(updateProducts)
   }
 }
 
-export default ProductsRepository;
+export default ProductsRepository
